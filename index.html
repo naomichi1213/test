@@ -1,0 +1,363 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>はしりょう博士のふしぎな橋クイズ！</title>
+    <style>
+        body {
+            font-family: "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 20px;
+        }
+        h1 { color: #0066cc; font-size: 24px; line-height: 1.5; }
+        
+        .character-box {
+            background-color: #e6f2ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #b3d9ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .character-icon { font-size: 40px; }
+        
+        .quiz-image {
+            width: 100%;
+            height: 250px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 1px solid #eee;
+        }
+        .quiz-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 0.5s ease;
+        }
+        .quiz-image-text { font-size: 50px; }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            font-weight: bold;
+            line-height: 1.4; /* ルビが重ならないように行間を調整 */
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-option {
+            background-color: #f0f0f0;
+            color: #333;
+            border: 2px solid #ccc;
+        }
+        .btn-option:hover { background-color: #e0e0e0; }
+        .btn-start {
+            background-color: #ff9900;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 0 #cc7a00;
+        }
+        .btn-next {
+            background-color: #00cc66;
+            color: white;
+            display: none;
+        }
+        .feedback {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 20px 0;
+            min-height: 30px;
+        }
+        .correct { color: #e60000; }
+        .incorrect { color: #0000cc; }
+        .screen { display: none; }
+        .active { display: block; }
+        .digital-twin {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: left;
+            line-height: 1.8;
+        }
+        
+        /* ルビ（ふりがな）の調整 */
+        rt { font-size: 0.6em; color: #555; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="start-screen" class="screen active">
+        <h1>はしりょう<ruby>博士<rt>はかせ</rt></ruby>の<br>ふしぎな<ruby>橋<rt>はし</rt></ruby>クイズ！</h1>
+        <div class="quiz-image">
+             <img src="images/top.jpg" alt="トップ画像" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'quiz-image-text\'>👨‍🎓🌉</div>'">
+        </div>
+        <p><ruby>君<rt>きみ</rt></ruby>はいくつ<ruby>正解<rt>せいかい</rt></ruby>できるかな？<br><ruby>土木<rt>どぼく</rt></ruby>の<ruby>秘密<rt>ひみつ</rt></ruby>にせまろう！</p>
+        <button class="btn btn-start" onclick="startGame()">スタート！</button>
+    </div>
+
+    <div id="quiz-screen" class="screen">
+        <h2 id="question-number">第1問</h2>
+        
+        <div class="quiz-image" id="q-image-container">
+            <img id="quiz-main-img" src="" alt="問題画像">
+        </div>
+
+        <p id="question-text" style="font-size: 18px; font-weight:bold; line-height: 2.0;">問題文</p>
+        
+        <div id="options-container"></div>
+        <div class="feedback" id="feedback-text"></div>
+        
+        <div class="character-box" id="explanation-box" style="display:none;">
+            <div class="character-icon">👨‍🎓</div>
+            <div id="explanation-text" style="line-height: 1.8;">解説</div>
+        </div>
+
+        <button class="btn btn-next" id="next-btn" onclick="nextQuestion()">つぎの<ruby>問題<rt>もんだい</rt></ruby>へ</button>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <h1>けっかはっぴょう！</h1>
+        <div class="quiz-image">
+             <img src="images/result.jpg" alt="結果画像" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'quiz-image-text\'>🏆</div>'">
+        </div>
+        <p style="font-size: 24px;">7<ruby>問<rt>もん</rt></ruby><ruby>中<rt>ちゅう</rt></ruby> <span id="score-display" style="color:#e60000; font-weight:bold;"></span> <ruby>問<rt>もん</rt></ruby>せいかい！</p>
+        <p id="result-message"></p>
+
+        <div class="digital-twin">
+            <h3>🤖 <ruby>未来<rt>みらい</rt></ruby>の<ruby>技術<rt>ぎじゅつ</rt></ruby> デジタルツイン！</h3>
+            <p>パソコンの<ruby>中<rt>なか</rt></ruby>に、<ruby>本物<rt>ほんもの</rt></ruby>そっくりの<ruby>橋<rt>はし</rt></ruby>を<ruby>作<rt>つく</rt></ruby>る<ruby>技術<rt>ぎじゅつ</rt></ruby>だよ！<br>
+            ゲームみたいに、<ruby>本物<rt>ほんもの</rt></ruby>の<ruby>橋<rt>はし</rt></ruby>に<ruby>行<rt>い</rt></ruby>かなくても、<ruby>安全<rt>あんぜん</rt></ruby>に<ruby>点検<rt>てんけん</rt></ruby>の<ruby>練習<rt>れんしゅう</rt></ruby>ができるんだ。<br>
+            きみも、<ruby>未来<rt>みらい</rt></ruby>の「<ruby>橋<rt>はし</rt></ruby>のお<ruby>医者<rt>いしゃ</rt></ruby>さん」になれるかも！？</p>
+        </div>
+
+        <button class="btn btn-start" onclick="location.reload()">もういちどあそぶ</button>
+    </div>
+</div>
+
+<script>
+    // ▼▼▼ ここからデータ設定 ▼▼▼
+    // ルビ（ふりがな）付きのテキストに変更しました。
+    
+    const quizData = [
+        {
+            q: "<ruby>橋<rt>はし</rt></ruby>は<ruby>何<rt>なに</rt></ruby>のためにあるの？",
+            imgBefore: "images/q1-before.jpg", 
+            imgAfter:  "images/q1-after.jpg", 
+            imgEmoji: "🌉",
+            options: ["お<ruby>金<rt>かね</rt></ruby>を<ruby>運<rt>はこ</rt></ruby>ぶため", "<ruby>大雨<rt>おおあめ</rt></ruby>から<ruby>川<rt>かわ</rt></ruby>を<ruby>守<rt>まも</rt></ruby>るため", "<ruby>人<rt>ひと</rt></ruby>や<ruby>車<rt>くるま</rt></ruby>が<ruby>安全<rt>あんぜん</rt></ruby>に<ruby>渡<rt>わた</rt></ruby>るため！"],
+            correct: 2,
+            explanation: "<ruby>正解<rt>せいかい</rt></ruby>は「<ruby>安全<rt>あんぜん</rt></ruby>に<ruby>渡<rt>わた</rt></ruby>るため」！<br><ruby>橋<rt>はし</rt></ruby>がないと、<ruby>買<rt>か</rt></ruby>い<ruby>物<rt>もの</rt></ruby>に<ruby>行<rt>い</rt></ruby>けなかったり、<ruby>救急車<rt>きゅうきゅうしゃ</rt></ruby>が<ruby>通<rt>とお</rt></ruby>れなかったりして<ruby>大変<rt>たいへん</rt></ruby>なんだ。"
+        },
+        {
+            q: "<ruby>橋<rt>はし</rt></ruby>を<ruby>点検<rt>てんけん</rt></ruby>しないとどうなる？（そのままにしておくと...）",
+            imgBefore: "images/q2-before.jpg", 
+            imgAfter:  "images/q2-after.jpg",
+            imgEmoji: "🚑",
+            options: ["<ruby>背<rt>せ</rt></ruby>が<ruby>高<rt>たか</rt></ruby>くなる？", "<ruby>何<rt>なに</rt></ruby>も<ruby>変<rt>か</rt></ruby>わらない？", "けがをして<ruby>使<rt>つか</rt></ruby>えなくなる！"],
+            correct: 2,
+            explanation: "<ruby>橋<rt>はし</rt></ruby>も<ruby>人間<rt>にんげん</rt></ruby>と<ruby>同<rt>おな</rt></ruby>じで、<ruby>古<rt>ふる</rt></ruby>くなると「びょうき（ヒビやサビ）」になるんだ。<br><ruby>直<rt>なお</rt></ruby>さないと、<ruby>崩<rt>くず</rt></ruby>れてしまってみんなが<ruby>通<rt>とお</rt></ruby>れなくなっちゃうよ！"
+        },
+        {
+            q: "このおしゃれな<ruby>形<rt>かたち</rt></ruby>の<ruby>橋<rt>はし</rt></ruby>（<ruby>弓<rt>ゆみ</rt></ruby>のような<ruby>形<rt>かたち</rt></ruby>）は？",
+            imgBefore: "images/q3-before.jpg", 
+            imgAfter:  "images/q3-after.jpg",
+            imgEmoji: "🌈",
+            options: ["アーチ<ruby>橋<rt>きょう</rt></ruby>", "トラス<ruby>橋<rt>きょう</rt></ruby>", "つり<ruby>橋<rt>ばし</rt></ruby>"],
+            correct: 0,
+            explanation: "<ruby>正解<rt>せいかい</rt></ruby>はアーチ<ruby>橋<rt>きょう</rt></ruby>！<br>カーブの<ruby>力<rt>ちから</rt></ruby>で、<ruby>重<rt>おも</rt></ruby>たいものをしっかり<ruby>支<rt>ささ</rt></ruby>える「<ruby>力持<rt>ちからも</rt></ruby>ち」な<ruby>形<rt>かたち</rt></ruby>なんだ。<ruby>昔<rt>むかし</rt></ruby>からある、とっても<ruby>丈夫<rt>じょうぶ</rt></ruby>な<ruby>橋<rt>はし</rt></ruby>だよ。"
+        },
+        {
+            q: "ワイヤーでつっている、<ruby>長<rt>なが</rt></ruby>～い<ruby>橋<rt>はし</rt></ruby>によくある<ruby>形<rt>かたち</rt></ruby>は？",
+            imgBefore: "images/q4-before.jpg", 
+            imgAfter:  "images/q4-after.jpg",
+            imgEmoji: "⛓️",
+            options: ["アーチ<ruby>橋<rt>きょう</rt></ruby>", "けた<ruby>橋<rt>ばし</rt></ruby>", "つり<ruby>橋<rt>ばし</rt></ruby>（吊り橋）"],
+            correct: 2,
+            explanation: "<ruby>正解<rt>せいかい</rt></ruby>はつり<ruby>橋<rt>ばし</rt></ruby>！<br><ruby>大<rt>おお</rt></ruby>きなケーブルで<ruby>橋<rt>はし</rt></ruby>を「よいしょ！」と<ruby>持<rt>も</rt></ruby>ち<ruby>上<rt>あ</rt></ruby>げているんだ。<ruby>世界<rt>せかい</rt></ruby>で<ruby>一番<rt>いちばん</rt></ruby><ruby>長<rt>なが</rt></ruby>い<ruby>橋<rt>はし</rt></ruby>も、この<ruby>形<rt>かたち</rt></ruby>をしていることが<ruby>多<rt>おお</rt></ruby>いよ。"
+        },
+        {
+            q: "コンクリートの<ruby>橋<rt>はし</rt></ruby>、どっちが<ruby>強<rt>つよ</rt></ruby>いかな？",
+            imgBefore: "images/q5-before.jpg", 
+            imgAfter:  "images/q5-after.jpg",
+            imgEmoji: "💪",
+            options: ["<ruby>鉄筋<rt>てっきん</rt></ruby>がある<ruby>方<rt>ほう</rt></ruby>", "コンクリートだけの<ruby>方<rt>ほう</rt></ruby>"],
+            correct: 0,
+            explanation: "<ruby>正解<rt>せいかい</rt></ruby>は<ruby>鉄筋<rt>てっきん</rt></ruby>がある<ruby>方<rt>ほう</rt></ruby>！<br>コンクリートは「<ruby>押<rt>お</rt></ruby>される<ruby>力<rt>ちから</rt></ruby>」に<ruby>強<rt>つよ</rt></ruby>いけど、「<ruby>引<rt>ひ</rt></ruby>っ<ruby>張<rt>ぱ</rt></ruby>られる<ruby>力<rt>ちから</rt></ruby>」に<ruby>弱<rt>よわ</rt></ruby>いんだ。だから<ruby>鉄<rt>てつ</rt></ruby>の<ruby>棒<rt>ぼう</rt></ruby>（<ruby>鉄筋<rt>てっきん</rt></ruby>）を<ruby>入<rt>い</rt></ruby>れて<ruby>最強<rt>さいきょう</rt></ruby>のチームを<ruby>作<rt>つく</rt></ruby>っているんだよ！"
+        },
+        {
+            q: "<ruby>鉄筋<rt>てっきん</rt></ruby>コンクリートの<ruby>敵<rt>てき</rt></ruby>は？（サビさせてしまうのは...）",
+            imgBefore: "images/q6-before.jpg", 
+            imgAfter:  "images/q6-after.jpg",
+            imgEmoji: "🧂",
+            options: ["お<ruby>砂糖<rt>さとう</rt></ruby>", "コンソメ", "<ruby>水<rt>みず</rt></ruby>と<ruby>塩<rt>しお</rt></ruby>！"],
+            correct: 2,
+            explanation: "<ruby>正解<rt>せいかい</rt></ruby>は<ruby>水<rt>みず</rt></ruby>と<ruby>塩<rt>しお</rt></ruby>！<br><ruby>水<rt>みず</rt></ruby>や<ruby>塩<rt>しお</rt></ruby>が<ruby>入<rt>はい</rt></ruby>ると、<ruby>中<rt>なか</rt></ruby>の<ruby>鉄筋<rt>てっきん</rt></ruby>がサビて<ruby>膨<rt>ふく</rt></ruby>らんで、コンクリートが<ruby>割<rt>わ</rt></ruby>れてしまうんだ！"
+        },
+        {
+            q: "<ruby>橋<rt>はし</rt></ruby>のお<ruby>医者<rt>いしゃ</rt></ruby>さんの<ruby>仕事<rt>しごと</rt></ruby>（<ruby>点検<rt>てんけん</rt></ruby>）は？",
+            imgBefore: "images/q7-before.jpg", 
+            imgAfter:  "images/q7-after.jpg",
+            imgEmoji: "🔍",
+            options: ["<ruby>毎日<rt>まいにち</rt></ruby>お<ruby>水<rt>みず</rt></ruby>をあげる", "<ruby>寒<rt>さむ</rt></ruby>くないようにたき<ruby>火<rt>び</rt></ruby>をする", "<ruby>定期的<rt>ていきてき</rt></ruby>に<ruby>健康診断<rt>けんこうしんだん</rt></ruby>（<ruby>点検<rt>てんけん</rt></ruby>）をする！"],
+            correct: 2,
+            explanation: "<ruby>正解<rt>せいかい</rt></ruby>は<ruby>健康診断<rt>けんこうしんだん</rt></ruby>！<br>ハンマーで<ruby>叩<rt>たた</rt></ruby>いたり、<ruby>近<rt>ちか</rt></ruby>くで<ruby>見<rt>み</rt></ruby>たりして、<ruby>小<rt>ちい</rt></ruby>さな<ruby>傷<rt>きず</rt></ruby>を<ruby>見<rt>み</rt></ruby>つけるんだ。これを「<ruby>点検<rt>てんけん</rt></ruby>」と<ruby>言<rt>い</rt></ruby>うよ。"
+        }
+    ];
+    // ▲▲▲ 設定ここまで ▲▲▲
+
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let isAnswered = false;
+
+    function startGame() {
+        document.getElementById('start-screen').classList.remove('active');
+        document.getElementById('quiz-screen').classList.add('active');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        isAnswered = false;
+        const currentData = quizData[currentQuestionIndex];
+        
+        document.getElementById('question-number').innerText = `第${currentQuestionIndex + 1}問`;
+        
+        // ★重要：ルビを表示するために innerText ではなく innerHTML を使います
+        document.getElementById('question-text').innerHTML = currentData.q;
+        
+        const imgTag = document.getElementById('quiz-main-img');
+        const imgContainer = document.getElementById('q-image-container');
+
+        // エラーハンドリングのリセット
+        imgTag.style.display = 'block';
+        imgTag.onerror = function() {
+             this.style.display='none';
+             imgContainer.innerHTML = `<div class='quiz-image-text'>${currentData.imgEmoji}</div>`;
+        };
+        
+        if (currentData.imgBefore && currentData.imgBefore !== "") {
+            imgTag.src = currentData.imgBefore;
+        } else {
+            imgTag.style.display='none';
+            imgContainer.innerHTML = `<div class='quiz-image-text'>${currentData.imgEmoji}</div>`;
+        }
+
+        document.getElementById('feedback-text').innerText = "";
+        document.getElementById('explanation-box').style.display = "none";
+        document.getElementById('next-btn').style.display = "none";
+
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = "";
+
+        currentData.options.forEach((option, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-option';
+            // ★重要：ここもルビ表示のために innerHTML を使用
+            btn.innerHTML = option;
+            btn.onclick = () => checkAnswer(index);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selectedIndex) {
+        if (isAnswered) return;
+        isAnswered = true;
+
+        const currentData = quizData[currentQuestionIndex];
+        const feedback = document.getElementById('feedback-text');
+        const explanationBox = document.getElementById('explanation-box');
+        const explanationText = document.getElementById('explanation-text');
+        const nextBtn = document.getElementById('next-btn');
+
+        if (currentData.imgAfter && currentData.imgAfter !== "") {
+             const imgTag = document.getElementById('quiz-main-img');
+             if(imgTag.style.display === 'none') {
+                 const imgContainer = document.getElementById('q-image-container');
+                 imgContainer.innerHTML = '<img id="quiz-main-img" src="" alt="解説画像">';
+             }
+             document.getElementById('quiz-main-img').src = currentData.imgAfter;
+        }
+
+        const buttons = document.querySelectorAll('.btn-option');
+        buttons.forEach((btn, index) => {
+            btn.disabled = true;
+            if (index === currentData.correct) {
+                btn.style.backgroundColor = "#ccffcc";
+                btn.innerHTML += " ◎";
+            } else if (index === selectedIndex) {
+                btn.style.backgroundColor = "#ffcccc";
+                btn.innerHTML += " ✖";
+            }
+        });
+
+        if (selectedIndex === currentData.correct) {
+            score++;
+            feedback.innerHTML = '<span class="correct">せいかい！🎉</span>';
+        } else {
+            feedback.innerHTML = '<span class="incorrect">ざんねん...💦</span>';
+        }
+
+        explanationText.innerHTML = currentData.explanation;
+        explanationBox.style.display = "flex";
+        nextBtn.style.display = "block";
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < quizData.length) {
+            showQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function showResults() {
+        document.getElementById('quiz-screen').classList.remove('active');
+        document.getElementById('result-screen').classList.add('active');
+        document.getElementById('score-display').innerText = score;
+        
+        let msg = "";
+        if (score === quizData.length) {
+            msg = "すごい！<ruby>全問正解<rt>ぜんもんせいかい</rt></ruby>！きみは<ruby>立派<rt>りっぱ</rt></ruby>な<ruby>橋博士<rt>はしはかせ</rt></ruby>だ！🎓✨";
+        } else if (score >= quizData.length - 2) {
+            msg = "おしい！あと<ruby>少<rt>すこ</rt></ruby>しで<ruby>満点<rt>まんてん</rt></ruby>だ！<ruby>橋<rt>はし</rt></ruby>のこと、よく<ruby>知<rt>し</rt></ruby>っているね！😊";
+        } else {
+            msg = "またチャレンジしてね！<ruby>橋<rt>はし</rt></ruby>の<ruby>秘密<rt>ひみつ</rt></ruby>、わかったかな？🌱";
+        }
+        
+        // ★ここもルビ対応のため innerHTML に変更
+        document.getElementById('result-message').innerHTML = msg;
+    }
+</script>
+
+</body>
+</html>
